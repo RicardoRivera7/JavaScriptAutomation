@@ -1,142 +1,199 @@
-# JavaScriptAutomation
 
 
-import java.util.*;
-import java.io.*;
-public class Yu_Gi_Oh 
-{
 
-	
-	public static void main(String[] args) 
-	{
-		String opp = null;
-		
-		
-		
-		System.out.println("Welcome to Yu-Gi-Oh the game!\n");
-		
-	
-		
-		
-		
-			System.out.println("This is a simplified version of Yu-Gi-Oh, you simply choose a card and that card will automatically attack.");
-			System.out.println("The cards do damage to both players so choose your cards wisely!");
-			System.out.println("once you place a card it is gone after the battle, and once you draw all of the cards in your hand shift position down");
-			System.out.println("Have fun\n");
-			
-		
-		String character = PickACharacter();
-		CardsAndDecks player1 = new CardsAndDecks();
-		PlayerStats player = new PlayerStats(4000, 7);
-		AI com = new AI(4000, 7);
-		String choosedeck = player1.ChooseDeck();
-		player.PlayerHealth1(character);
-		opp = com.AIselect(opp);
-		com.AIhealth1(opp);
-	
-		player1.DuelMonsterscards(choosedeck);
-		System.out.println("\nIt's time to D-d-d-duel!!!");
-		boolean run = true;
-		
-		while(run)
-		{
-			player1.battle();
-			
-			com.draw();
-			
-				player.PlayerHealth(character,com.getAttack(opp));
-				com.AIhealth(opp, player1.getAttack(character));
-				
-				player1.draw(choosedeck);
-		
-		if(player.isDead()==true || com.AIisDead()==true)
-		{
-			run = false;
-		
-		if(player.isDead()==true)
-		{
-			System.out.println("Game over you lose, you have been banished to the shadow realm");
-		}
-		if(com.AIisDead()==true)
-		{
-			System.out.println("Congrats!!! you won the duel!");
-		}
-		
-		}
-		}
-	}
-	
-	
+<h1>Main Test</h1>
 
-	
-	public static String PickACharacter()
-	{
-		@SuppressWarnings("resource")
-		Scanner in = new Scanner(System.in);
-		
-		System.out.println("Please select your character:\n");
-		System.out.println("Yami Yugi");
-		System.out.println("Seto Kaiba");
-		System.out.println("Joey Wheeler");
-		System.out.println("Mai Valentine");
-		System.out.println("Tea Gardner");
-		
-		String character = in.nextLine();
-		
-		switch (character.charAt(0))
-		{
-		
-			case 'Y':
-			case 'y':
-			{
-				System.out.println("You have selected Yami Yugi");
-				String charselect = "Yami Yugi";
-				return charselect;
-				
-			}
-			
-			case 'S':
-			case 's':
-			{
-				System.out.println("you have selected Seto Kaiba");
-				String charselect = "Seto Kaiba";
-				return charselect;
-				
-			}
-			
-			case 'J':
-			case 'j':
-			{
-				System.out.println("you have selected Joey Wheeler");
-				String charselect = "Joey Wheeler";
-				return charselect;
-			}
-			
-			case 'M':
-			case 'm':
-			{
-				System.out.println("You have selected Mai Valentine");
-				String charselect = "Mai Valentine";
-				return charselect;
-				
-			}
-			
-			case 'T':
-			case 't':
-			{
-				System.out.println("You have selected Tea Gardner");
-				String charselect = "Tea Gardner";
-				return charselect;
-			}
-			default:
-			{
-				System.out.println("you have not selected any of the characters, you will then be player 1");
-				String charselect = "Player 1";
-				return charselect;
-			}
-		
-		}
-		
-	}
+```
+
+
+const { test } = require('@playwright/test');
+const { LoginPage } = require('../pages/login');
+const { BoardPage } = require('../pages/boardpage');
+const testData = require('../testdata/boardtestdata.json');
+
+test.describe('Data Driven Board Tests - JavaScript', () => {
+
+  test.beforeEach(async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.login('admin', 'password123');
+  });
+
+  testData.forEach((scenario) => {
+
+    test(`Validate task: ${scenario.task}`, async ({ page }) => {
+
+      const boardPage = new BoardPage(page);
+
+      await boardPage.navigateToProject(scenario.project);
+      await boardPage.verifyColumnandTask(scenario.column, scenario.task);
+      await boardPage.verifyTags(scenario.task,scenario.tags);
+
+    });
+
+  });
+
+});
+
+
+
+```
+
+
+<br/>
+
+
+<h1>Login Page</h1>
+
+
+```
+
+class LoginPage {
+  constructor(page) {
+    this.page = page;
+    this.usernameInput = page.locator('xpath=//input[@id="username"]');
+    this.passwordInput = page.locator('xpath=//input[@id="password"]'); 
+  }
+
+  async goto() {
+    await this.page.goto('/');  
+   
+  }
+
+  async login(username, password) {
+    await this.usernameInput.fill(username);
+    await this.passwordInput.fill(password);
+    await this.page.click('button[type="submit"]');
+  }
+}
+
+module.exports = { LoginPage };
+
+
+```
+
+
+<br/>
+
+
+<h1>Board Page</h1>
+
+```
+
+const { expect } = require('@playwright/test');
+
+class BoardPage {
+  constructor(page) {
+    this.page = page;
+  }
+
+  async navigateToProject(projectName) {
+    await this.page.click(`text=${projectName}`);
+  }
+
+  // Verifies the task name is under the correct Column name (Ex: To Do || In Progress)
+  async verifyColumnandTask(columnName, taskName) {
+     const column = this.page.locator('div.flex.flex-col.w-80.bg-gray-50.rounded-lg.p-4', {has: this.page.locator('h2', { hasText: columnName })});
+
+  await expect(column).toHaveCount(1);  //ensures it grabs the unique column    
+  await expect(column.locator(`h2`, { hasText: columnName })).toBeVisible(); //verifes name of column matches expected name
+
+ 
+  const task = column.locator('h3', { hasText: taskName }); //verifies it finds the task name within the column
+  await expect(task).toHaveCount(1);    // ensure exactly one unique task name
+  await expect(task).toBeVisible(); //checks if task is visible on screen to user
+  }
+
+
+  async verifyTags(taskName, tags) {
+
+   const taskCard = this.page.locator('div.bg-white.p-4.rounded-lg.shadow-sm.border', { has: this.page.locator('h3', { hasText: taskName })}); //finds the title of the task
+   await expect(taskCard).toHaveCount(1); //ensures no duplicates of task cards
+
+   const getTags = await taskCard.locator('div.flex.flex-wrap span').allTextContents(); //gets all tags
+   const trimmedTags = getTags.map(t => t.trim()); //separates all tags into array
+
+   expect(trimmedTags.sort()).toEqual(tags.sort()); //compares grabbed tags to expected tags of json
+
+    
+  }
+}
+
+module.exports = { BoardPage };
+
+
+
+
+
+```
+
+
+
+<h1>Board Page Json</h1>
+
+```
+[
+  {
+    "project": "Web Application",
+    "task": "Implement user authentication",
+    "column": "To Do",
+    "tags": ["Feature", "High Priority"]
+  },
+  {
+    "project": "Web Application",
+    "task": "Fix navigation bug",
+    "column": "To Do",
+    "tags": ["Bug"]
+  },
+  {
+    "project": "Web Application",
+    "task": "Design system updates",
+    "column": "In Progress",
+    "tags": ["Design"]
+  },
+  {
+    "project": "Mobile Application",
+    "task": "Push notification system",
+    "column": "To Do",
+    "tags": ["Feature"]
+  },
+  {
+    "project": "Mobile Application",
+    "task": "Offline mode",
+    "column": "In Progress",
+    "tags": ["Feature", "High Priority"]
+  },
+  {
+    "project": "Mobile Application",
+    "task": "App icon design",
+    "column": "Done",
+    "tags": ["Design"]
+  }
+]
+
+
+
+
+```
+
+
+<h1>Config</h1>
+
+```
+
+const { defineConfig } = require('@playwright/test');
+
+module.exports = defineConfig({
+  testDir: './tests',
+  use: {
+    baseURL: 'https://animated-gingersnap-8cf7f2.netlify.app/',
+    headless: false,
+    viewport: { width: 1280, height: 720 }
+  }
+});
+
+
+```
+
 
 }
